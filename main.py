@@ -1,10 +1,13 @@
+import os
+
 import torch
+from PIL import Image
 from torch import nn, optim
 from torch.autograd import Variable
 from torchvision import transforms
 
 from cnn import ResNET50
-from dataset import CatsAndDogsDataset
+from dataset import CellsDataset
 
 
 def create_model(learning_rate, device):
@@ -66,11 +69,11 @@ def main():
          transforms.ToTensor(),
          transforms.Normalize([0.485, 0.456, 0.406],
                               [0.229, 0.224, 0.225])])
-    dataset = CatsAndDogsDataset("datasets/cats_and_dogs/train", train_transforms)
+    dataset = CellsDataset("datasets/cells/train", train_transforms)
 
     epochs = 100
     learning_rate = 0.001
-    batch_size = 12
+    batch_size = 65
     weights_file = "weights/weights_file"
     train_model(
         device,
@@ -80,6 +83,15 @@ def main():
         batch_size,
         weights_file
     )
+
+
+def convert_0_cells_to_rgb():
+    directory = "datasets/cells/train/0_cells"
+    for root, directories, files in os.walk(directory):
+        for file in files:
+            image = Image.open(os.path.join(root, file))
+            image = image.convert("RGB")
+            image.save(os.path.join(root, file), "TIFF")
 
 
 if __name__ == '__main__':
