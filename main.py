@@ -6,21 +6,24 @@ from torch import nn, optim
 from torch.autograd import Variable
 from torchvision import transforms
 
-from cnn import ResNET50
+from cnn import ResNET50, DenseNET121
 from dataset import CellsDataset
 
 
 def create_model(learning_rate, device):
-    model = ResNET50().to(device)
+    model = DenseNET121().to(device)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.NLLLoss()
     return model, optimizer, criterion
 
 
-def train_model(device, dataset, epochs, learning_rate, batch_size, weights_file):
+def train_model(device, dataset, epochs, learning_rate, batch_size,
+                weights_file):
     # create the model with the optimizer and the loss function
     (model, optimizer, criterion) = create_model(learning_rate, device)
-    dataset_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
+    dataset_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                                 batch_size=batch_size,
+                                                 shuffle=True)
     for epoch in range(epochs):
         for batch_id, (images, labels) in enumerate(dataset_loader):
             images = Variable(images)
@@ -61,19 +64,27 @@ def main():
 
     print("Using device: ")
     print(device)
-
     train_transforms = transforms.Compose(
-        [transforms.RandomRotation(30),
-         transforms.RandomResizedCrop(224),
-         transforms.RandomHorizontalFlip(),
-         transforms.ToTensor(),
-         transforms.Normalize([0.485, 0.456, 0.406],
-                              [0.229, 0.224, 0.225])])
-    dataset = CellsDataset("datasets/cells/train", train_transforms)
+        [
+            transforms.Resize((100, 100)),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomHorizontalFlip(),
+            # transforms.RandomCrop(100),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ])
+    # train_transforms = transforms.Compose(
+    #     [transforms.RandomRotation(30),
+    #      transforms.Resize(224),
+    #      transforms.RandomHorizontalFlip(),
+    #      transforms.ToTensor(),
+    #      transforms.Normalize([0.485, 0.456, 0.406],
+    #                           [0.229, 0.224, 0.225])])
+    dataset = CellsDataset("datasets/cells", train_transforms)
 
     epochs = 100
     learning_rate = 0.001
-    batch_size = 65
+    batch_size = 20
     weights_file = "weights/weights_file"
     train_model(
         device,
@@ -86,7 +97,7 @@ def main():
 
 
 def convert_0_cells_to_rgb():
-    directory = "datasets/cells/train/0_cells"
+    directory = "datasets/cells"
     for root, directories, files in os.walk(directory):
         for file in files:
             image = Image.open(os.path.join(root, file))
@@ -96,3 +107,20 @@ def convert_0_cells_to_rgb():
 
 if __name__ == '__main__':
     main()
+    # zero = "datasets/cells/zero_cells/mcf-z-stacks-03212011_b20_s1_w11befe742-4e7c-4e83-a975-08c84cf803e4-gimp.jpg"
+    # with_cells = "datasets/cells/with_cells/mcf-z-stacks" \
+    #              "-03212011_a01_s1_w1a0cd3f30-ffbe-424c-a330-0a168df372b6.tif"
+    # image = Image.open(with_cells)
+    # image = image.convert("RGB")
+    # train_transforms = transforms.Compose(
+    #     [
+    #         transforms.Resize((100, 100)),
+    #         transforms.RandomVerticalFlip(),
+    #         transforms.RandomHorizontalFlip(),
+    #         transforms.RandomCrop(100),
+    #         transforms.ToTensor(),
+    #         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    #         transforms.ToPILImage()
+    #     ])
+    # image = train_transforms(image)
+    # image.save("test.tif", "TIFF")
