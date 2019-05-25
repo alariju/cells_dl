@@ -11,7 +11,7 @@ from dataset import CellsDataset
 
 
 def create_model(learning_rate, device):
-    model = DenseNET121().to(device)
+    model = ResNET50().to(device)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.NLLLoss()
     return model, optimizer, criterion
@@ -47,11 +47,11 @@ def train_model(device, dataset, epochs, learning_rate, batch_size,
             # train mode
             model.train()
 
+            print(f"epoch: {epoch} [{batch_id * len(images)}/"
+                  f"{len(dataset_loader.dataset)} "
+                  f"({100. * batch_id / len(dataset_loader):.0f}%)"
+                  f"\tLoss: {loss.item():.6f}]")
             if batch_id % 100 == 0:
-                print(f"epoch: {epoch} [{batch_id * len(images)}/"
-                      f"{len(dataset_loader.dataset)} "
-                      f"({100. * batch_id / len(dataset_loader):.0f}%)"
-                      f"\tLoss: {loss.item():.6f}]")
                 # print('Epoch de entrenamiento: {} [{}/{} ({
                 # :.0f}%)]\tPerdida: {:.6f}'.format( epochs, batch_id * len(
                 # train), len(dataset_loader.dataset), 100. * batch_id /
@@ -66,10 +66,9 @@ def main():
     print(device)
     train_transforms = transforms.Compose(
         [
-            transforms.Resize((100, 100)),
             transforms.RandomVerticalFlip(),
             transforms.RandomHorizontalFlip(),
-            # transforms.RandomCrop(100),
+            transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         ])
@@ -80,11 +79,11 @@ def main():
     #      transforms.ToTensor(),
     #      transforms.Normalize([0.485, 0.456, 0.406],
     #                           [0.229, 0.224, 0.225])])
-    dataset = CellsDataset("datasets/cells", train_transforms)
+    dataset = CellsDataset("datasets/cells/train", train_transforms)
 
     epochs = 100
     learning_rate = 0.001
-    batch_size = 20
+    batch_size = 50
     weights_file = "weights/weights_file"
     train_model(
         device,
